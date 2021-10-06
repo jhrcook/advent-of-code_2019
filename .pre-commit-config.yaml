@@ -8,6 +8,7 @@ repos:
     -   id: check-json
     -   id: check-yaml
     -   id: end-of-file-fixer
+        exclude: data
     -   id: trailing-whitespace
 -   repo: https://github.com/psf/black
     rev: 19.3b0
