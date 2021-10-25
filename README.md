@@ -10,6 +10,7 @@
 ## Solutions
 
 1. [Day 1](challenges/01_challenge.py) ⭐⭐
+1. [Day 2](challenges/02_challenge.py) ⭐⭐
 
 ---
 
