@@ -13,6 +13,7 @@
 1. [Day 2](challenges/02_challenge.py) ⭐⭐
 1. [Day 3](challenges/03_challenge.py) ⭐⭐
 1. [Day 4](challenges/04_challenge.py) ⭐⭐
+1. [Day 5](challenges/05_challenge.py) ⭐⭐
 
 ---
 
