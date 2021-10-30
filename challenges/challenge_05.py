@@ -32,7 +32,7 @@ class OperationResult:
 
 @runtime_checkable
 class Opcode(Protocol):
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         ...
 
     @property
@@ -52,7 +52,7 @@ class Opcode1(Opcode):
         self.out_pos = out_pos
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         code[self.out_pos] = self.a + self.b
         return OperationResult(None, None)
 
@@ -76,7 +76,7 @@ class Opcode2(Opcode):
         self.out_pos = out_pos
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         code[self.out_pos] = self.a * self.b
         return OperationResult(None, None)
 
@@ -96,8 +96,9 @@ class Opcode3(Opcode):
         self.out_pos = out_pos
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
-        code[self.out_pos] = input_val
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
+        assert len(inputs) > 0
+        code[self.out_pos] = inputs.pop(0)
         return OperationResult(None, None)
 
     @property
@@ -116,7 +117,7 @@ class Opcode4(Opcode):
         self.a = a
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         return OperationResult(self.a, None)
 
     @property
@@ -137,7 +138,7 @@ class Opcode5(Opcode):
         self.b = b
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         return OperationResult(None, self.b if self.a != 0 else None)
 
     @property
@@ -158,7 +159,7 @@ class Opcode6(Opcode):
         self.b = b
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         return OperationResult(None, self.b if self.a == 0 else None)
 
     @property
@@ -181,7 +182,7 @@ class Opcode7(Opcode):
         self.out_pos = out_pos
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         code[self.out_pos] = 1 if self.a < self.b else 0
         return OperationResult(None, None)
 
@@ -205,7 +206,7 @@ class Opcode8(Opcode):
         self.out_pos = out_pos
         return None
 
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         code[self.out_pos] = 1 if self.a == self.b else 0
         return OperationResult(None, None)
 
@@ -218,7 +219,7 @@ class Opcode8(Opcode):
 
 
 class Opcode99(Opcode):
-    def __call__(self, code: Code, input_val: int, inst_ptr: int) -> OperationResult:
+    def __call__(self, code: Code, inputs: list[int], inst_ptr: int) -> OperationResult:
         return OperationResult(None, inst_ptr)
 
     @property
@@ -285,14 +286,15 @@ class Instruction:
         return f"[{self.instruction}] - op: {self.opcode_value}  modes: {self.modes}"
 
 
-def run_opcode(code: Code, sys_input: int) -> Optional[int]:
+def run_opcode(code: Code, inputs: list[int], verbose: bool = True) -> Optional[int]:
     inst_ptr = 0
     output: Optional[int] = None
     nonzero_output: bool = False
     while True:
         instruction = Instruction(code[inst_ptr])
         if instruction.opcode_value == 99:
-            print("found completion operation (op 99)")
+            if verbose:
+                print("found completion operation (op 99)")
             break
 
         if nonzero_output:
@@ -304,10 +306,10 @@ def run_opcode(code: Code, sys_input: int) -> Optional[int]:
             instruction.opcode_value, params=params, code=code, modes=instruction.modes
         )
 
-        op_res = operation(code=code, input_val=sys_input, inst_ptr=inst_ptr)
+        op_res = operation(code=code, inputs=inputs, inst_ptr=inst_ptr)
         if op_res.output is not None:
             output = op_res.output
-            if output == 0:
+            if output == 0 and verbose:
                 print(f" successful diagnostic (instruction {inst_ptr})")
             else:
                 nonzero_output = True
@@ -320,13 +322,14 @@ def run_opcode(code: Code, sys_input: int) -> Optional[int]:
     return output
 
 
-puzzle_input: Code = []
-with open(Path("data", "05", "input.txt"), "r") as file:
-    for line in file:
-        puzzle_input += [int(x) for x in line.strip().split(",")]
+if __name__ == "__main__":
+    puzzle_input: Code = []
+    with open(Path("data", "05", "input.txt"), "r") as file:
+        for line in file:
+            puzzle_input += [int(x) for x in line.strip().split(",")]
 
-opcode_out = run_opcode(puzzle_input.copy(), sys_input=1)
-print(f"(part 1) output: {opcode_out}")
+    opcode_out = run_opcode(puzzle_input.copy(), inputs=[1])
+    print(f"(part 1) output: {opcode_out}")
 
-opcode_out = run_opcode(puzzle_input.copy(), sys_input=5)
-print(f"(part 2) output: {opcode_out}")
+    opcode_out = run_opcode(puzzle_input.copy(), inputs=[5])
+    print(f"(part 2) output: {opcode_out}")

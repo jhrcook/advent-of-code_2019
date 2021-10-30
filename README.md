@@ -9,12 +9,13 @@
 
 ## Solutions
 
-1. [Day 1](challenges/01_challenge.py) ⭐⭐
-1. [Day 2](challenges/02_challenge.py) ⭐⭐
-1. [Day 3](challenges/03_challenge.py) ⭐⭐
-1. [Day 4](challenges/04_challenge.py) ⭐⭐
-1. [Day 5](challenges/05_challenge.py) ⭐⭐
-1. [Day 6](challenges/06_challenge.py) ⭐⭐
+1. [Day 1](challenges/challenge_01.py) ⭐⭐
+1. [Day 2](challenges/challenge_02.py) ⭐⭐
+1. [Day 3](challenges/challenge_03.py) ⭐⭐
+1. [Day 4](challenges/challenge_04.py) ⭐⭐
+1. [Day 5](challenges/challenge_05.py) ⭐⭐
+1. [Day 6](challenges/challenge_06.py) ⭐⭐
+1. [Day 7](challenges/challenge_07.py) ⭐
 
 ---
 
