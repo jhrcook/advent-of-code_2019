@@ -1,0 +1,17 @@
+black==21.9b0
+click==8.0.1
+flake8==3.9.2
+isort==5.9.3
+mccabe==0.6.1
+mypy==0.910
+mypy-extensions==0.4.3
+pathspec==0.9.0
+platformdirs==2.4.0
+pycodestyle==2.7.0
+pydantic==1.8.2
+pyflakes==2.3.1
+regex==2021.9.30
+toml==0.10.2
+tomli==1.2.1
+typer==0.4.0
+typing-extensions==3.10.0.2

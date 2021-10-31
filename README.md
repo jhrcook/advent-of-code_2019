@@ -15,7 +15,7 @@
 1. [Day 4](challenges/challenge_04.py) ⭐⭐
 1. [Day 5](challenges/challenge_05.py) ⭐⭐
 1. [Day 6](challenges/challenge_06.py) ⭐⭐
-1. [Day 7](challenges/challenge_07.py) ⭐
+1. [Day 7](challenges/challenge_07.py) ⭐⭐
 
 ---
 

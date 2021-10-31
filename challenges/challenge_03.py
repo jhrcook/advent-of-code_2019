@@ -186,4 +186,3 @@ for i, (test_in, test_ans) in enumerate(
 
 ans, coord = find_shortest_path_for_two_wires(wires)
 print(f"(part 2) shortest crossing of the wires was at {coord} at a distance of {ans}")
-print("")
