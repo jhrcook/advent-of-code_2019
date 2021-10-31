@@ -16,6 +16,26 @@
 1. [Day 5](challenges/challenge_05.py) ⭐⭐
 1. [Day 6](challenges/challenge_06.py) ⭐⭐
 1. [Day 7](challenges/challenge_07.py) ⭐⭐
+1. [Day 8](challenges/challenge_08.py) ⭐⭐
+
+
+## Setup
+
+Run the following command to setup the virtual environment.
+It requires that [pyenv](https://github.com/pyenv/pyenv) is installed.
+
+```bash
+make setup
+```
+
+## Run all challenges
+
+All of the scripts for the challenges can be run with the following command.
+This requires that the Python environment has already been created as shown above.
+
+```bash
+make run
+```
 
 ---
 
