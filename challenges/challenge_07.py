@@ -8,7 +8,7 @@ from intcode import Intcode, IntcodeComputer, IntcodeInput
 
 AmplifierPhaseSequence = Sequence[int]
 
-intcode_program: Intcode = []
+intcode_program: Intcode = Intcode([])
 with open(Path("data", "07", "input.txt"), "r") as file:
     for line in file:
         intcode_program += [int(x) for x in line.strip().split(",")]
@@ -44,7 +44,7 @@ def find_fastest_phase_sequence(
 
 
 # Test input.
-test_intcode = [3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0]
+test_intcode = Intcode([3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0])
 test_input_seq = [4, 3, 2, 1, 0]
 test_output = 43210
 test_res = run_amplifier_series(test_intcode, test_input_seq)
@@ -114,7 +114,7 @@ def run_amplifier_feedback_loop(
 test_intcode_str = """
 3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5
 """
-test_intcode = [int(x) for x in test_intcode_str.strip().split(",")]
+test_intcode = Intcode([int(x) for x in test_intcode_str.strip().split(",")])
 test_input_seq = [9, 8, 7, 6, 5]
 test_output = 139629729
 test_res = run_amplifier_feedback_loop(test_intcode, test_input_seq)

@@ -40,7 +40,7 @@ def run_intcode_diagnostics(code: Intcode, inputs: IntcodeInput) -> Optional[int
 
 
 if __name__ == "__main__":
-    puzzle_input: Intcode = []
+    puzzle_input: Intcode = Intcode([])
     with open(Path("data", "05", "input.txt"), "r") as file:
         for line in file:
             puzzle_input += [int(x) for x in line.strip().split(",")]

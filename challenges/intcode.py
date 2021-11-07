@@ -1,7 +1,17 @@
 """Intcode computer."""
+from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Iterable,
+    Optional,
+    Protocol,
+    SupportsIndex,
+    Union,
+    overload,
+    runtime_checkable,
+)
 
 
 class UnknownOperationException(BaseException):
@@ -16,8 +26,39 @@ class FailedThermalEnvironmentSupervisionTerminalDiagnostic(BaseException):
     pass
 
 
-Intcode = list[int]
 ParameterModes = tuple[int, int, int]
+
+
+class Intcode(list[int]):
+    @overload
+    def __getitem__(self, i: SupportsIndex) -> int:
+        ...
+
+    @overload
+    def __getitem__(self, i: slice) -> list[int]:
+        ...
+
+    def __getitem__(self, i: Union[SupportsIndex, slice]) -> Union[int, list[int]]:
+        return super().__getitem__(i)
+
+    @overload
+    def __setitem__(self, i: SupportsIndex, o: int) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, s: slice, o: Iterable[int]) -> None:
+        ...
+
+    def __setitem__(self, *args: Any) -> None:
+        assert len(args) == 2
+        super().__setitem__(*args)
+        return None
+
+    def __copy__(self) -> Intcode:
+        return Intcode(super().copy())
+
+    def copy(self) -> Intcode:
+        return self.__copy__()
 
 
 class IntcodeInput:
@@ -37,8 +78,10 @@ class IntcodeInput:
 
 @dataclass
 class OperationResult:
-    output: Optional[int]
-    instruction_pointer: Optional[int]
+
+    output: Optional[int] = None
+    instruction_pointer: Optional[int] = None
+    relative_base: Optional[int] = None
 
     def __str__(self) -> str:
         return f"output: {self.output}  ptr: {self.instruction_pointer}"
@@ -72,7 +115,7 @@ class Opcode1(Opcode):
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
         code[self.out_pos] = self.a + self.b
-        return OperationResult(None, None)
+        return OperationResult()
 
     @property
     def n_params(self) -> int:
@@ -98,7 +141,7 @@ class Opcode2(Opcode):
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
         code[self.out_pos] = self.a * self.b
-        return OperationResult(None, None)
+        return OperationResult()
 
     @property
     def n_params(self) -> int:
@@ -120,7 +163,7 @@ class Opcode3(Opcode):
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
         code[self.out_pos] = inputs.get()
-        return OperationResult(None, None)
+        return OperationResult()
 
     @property
     def n_params(self) -> int:
@@ -141,7 +184,7 @@ class Opcode4(Opcode):
     def __call__(
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
-        return OperationResult(self.a, None)
+        return OperationResult(output=self.a)
 
     @property
     def n_params(self) -> int:
@@ -164,7 +207,7 @@ class Opcode5(Opcode):
     def __call__(
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
-        return OperationResult(None, self.b if self.a != 0 else None)
+        return OperationResult(instruction_pointer=self.b if self.a != 0 else None)
 
     @property
     def n_params(self) -> int:
@@ -187,7 +230,7 @@ class Opcode6(Opcode):
     def __call__(
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
-        return OperationResult(None, self.b if self.a == 0 else None)
+        return OperationResult(instruction_pointer=self.b if self.a == 0 else None)
 
     @property
     def n_params(self) -> int:
@@ -213,7 +256,7 @@ class Opcode7(Opcode):
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
         code[self.out_pos] = 1 if self.a < self.b else 0
-        return OperationResult(None, None)
+        return OperationResult()
 
     @property
     def n_params(self) -> int:
@@ -239,7 +282,7 @@ class Opcode8(Opcode):
         self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
     ) -> OperationResult:
         code[self.out_pos] = 1 if self.a == self.b else 0
-        return OperationResult(None, None)
+        return OperationResult()
 
     @property
     def n_params(self) -> int:
@@ -247,6 +290,27 @@ class Opcode8(Opcode):
 
     def __str__(self) -> str:
         return f"op8 - a: {self.a}, b{self.b} -> out: {self.out_pos}"
+
+
+class Opcode9(Opcode):
+
+    a: int
+
+    def __init__(self, a: int) -> None:
+        self.a = a
+        return None
+
+    def __call__(
+        self, code: Intcode, inputs: IntcodeInput, inst_ptr: int
+    ) -> OperationResult:
+        return OperationResult(relative_base=self.a)
+
+    @property
+    def n_params(self) -> int:
+        return 1
+
+    def __str__(self) -> str:
+        return f"op9 - a: {self.a}"
 
 
 class Opcode99(Opcode):
@@ -264,7 +328,7 @@ class Opcode99(Opcode):
 
 
 def make_opcode(
-    op: int, params: list[int], code: Intcode, modes: ParameterModes
+    op: int, params: list[int], code: Intcode, modes: ParameterModes, rel_base: int
 ) -> Opcode:
 
     if op not in set(list(range(1, 9)) + [99]):
@@ -276,9 +340,11 @@ def make_opcode(
             opcode_values.append(code[param])
         elif mode == 1:
             opcode_values.append(param)
+        elif mode == 2:
+            opcode_values.append(code[param + rel_base])
         else:
             UnknownParameterModeException(mode)
-        if op in {3, 4, 99}:
+        if op in {3, 4, 9, 99}:
             break
 
     if op == 1:
@@ -297,6 +363,8 @@ def make_opcode(
         return Opcode7(a=opcode_values[0], b=opcode_values[1], out_pos=params[2])
     elif op == 8:
         return Opcode8(a=opcode_values[0], b=opcode_values[1], out_pos=params[2])
+    elif op == 9:
+        return Opcode9(a=opcode_values[0])
     elif op == 99:
         return Opcode99()
     else:
@@ -335,11 +403,13 @@ class IntcodeComputer:
     code: Intcode
     _verbose: bool
     _instr_ptr: int
+    _relative_base: int
 
     def __init__(self, code: Intcode, verbose: bool = False) -> None:
         self.code = code
         self._verbose = verbose
         self._instr_ptr = 0
+        self._relative_base = 0
 
     def _update_instruction_pointer(self, op: Opcode, op_res: OperationResult) -> None:
         if op_res.instruction_pointer is not None:
@@ -358,12 +428,13 @@ class IntcodeComputer:
                     print("found completion operation (op 99)")
                 break
 
-            params = self.code[self._instr_ptr + 1 : self._instr_ptr + 4]
+            params = self.code[(self._instr_ptr + 1) : (self._instr_ptr + 4)]
             operation = make_opcode(
                 instruction.opcode_value,
                 params=params,
                 code=self.code,
                 modes=instruction.modes,
+                rel_base=self._relative_base,
             )
             op_res = operation(code=self.code, inputs=inputs, inst_ptr=self._instr_ptr)
             if op_res.output is not None:
@@ -380,6 +451,6 @@ class IntcodeComputer:
         )
 
     def set_instruction_pointer(self, new_ptr: int) -> None:
-        assert new_ptr > 0
+        assert new_ptr >= 0
         self._instr_ptr = new_ptr
         return None
