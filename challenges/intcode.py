@@ -39,7 +39,19 @@ class Intcode(list[int]):
         ...
 
     def __getitem__(self, i: Union[SupportsIndex, slice]) -> Union[int, list[int]]:
+        self._extend_based_on_index(i)
         return super().__getitem__(i)
+
+    def _ensure_length_atleast(self, x: int) -> None:
+        if x >= len(self):
+            self.extend([0] * (x + 1 - len(self)))
+
+    def _extend_based_on_index(self, i: Union[SupportsIndex, slice]) -> None:
+        if isinstance(i, SupportsIndex):
+            self._ensure_length_atleast(x=int(i))
+        elif isinstance(i, slice):
+            x = max([a for a in (i.start, i.stop, i.stop) if a is not None])
+            self._ensure_length_atleast(x=x)
 
     @overload
     def __setitem__(self, i: SupportsIndex, o: int) -> None:
@@ -51,6 +63,10 @@ class Intcode(list[int]):
 
     def __setitem__(self, *args: Any) -> None:
         assert len(args) == 2
+        idx = args[0]
+        if isinstance(idx, (SupportsIndex, slice)):
+            self._extend_based_on_index(idx)
+
         super().__setitem__(*args)
         return None
 
