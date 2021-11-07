@@ -4,29 +4,32 @@ from itertools import permutations
 from pathlib import Path
 from typing import Callable, Sequence
 
-from challenge_05 import Code, IntcodeInput, run_intcode
+from intcode import Intcode, IntcodeComputer, IntcodeInput
 
 AmplifierPhaseSequence = Sequence[int]
 
-intcode_program: Code = []
+intcode_program: Intcode = []
 with open(Path("data", "07", "input.txt"), "r") as file:
     for line in file:
         intcode_program += [int(x) for x in line.strip().split(",")]
 
 
-def run_amplifier_series(intcode: Code, phase_sequence: AmplifierPhaseSequence) -> int:
+def run_amplifier_series(
+    intcode: Intcode, phase_sequence: AmplifierPhaseSequence
+) -> int:
     value = 0
     for phase in phase_sequence:
         inputs = IntcodeInput([phase, value])
-        res = run_intcode(code=intcode.copy(), inputs=inputs, verbose=False)
+        # res = run_intcode(code=intcode.copy(), inputs=inputs, verbose=False)
+        res = IntcodeComputer(code=intcode.copy())(inputs=inputs)
         assert res.output is not None
         value = res.output
     return value
 
 
 def find_fastest_phase_sequence(
-    intcode: Code,
-    amp_method: Callable[[Code, AmplifierPhaseSequence], int],
+    intcode: Intcode,
+    amp_method: Callable[[Intcode, AmplifierPhaseSequence], int],
     amp_phases: list[int],
 ) -> tuple[AmplifierPhaseSequence, int]:
     best_phase_seq: AmplifierPhaseSequence = []
@@ -66,42 +69,44 @@ print("")
 
 
 def run_amplifier_feedback_loop(
-    intcode: Code, phase_sequence: AmplifierPhaseSequence
+    intcode: Intcode, phase_sequence: AmplifierPhaseSequence
 ) -> int:
     value = 0
-    amp_codes: dict[int, Code] = {i: intcode.copy() for i in range(len(phase_sequence))}
-    amp_pointers: dict[int, int] = {}
+    amp_codes: dict[int, IntcodeComputer] = {
+        i: IntcodeComputer(code=intcode.copy()) for i in range(len(phase_sequence))
+    }
     halt = False
 
     for amp_i, phase in enumerate(phase_sequence):
         inputs = IntcodeInput([phase, value])
-        ptr = amp_pointers.get(amp_i, 0)
-        res = run_intcode(
-            code=amp_codes[amp_i], inputs=inputs, verbose=False, start_pos=ptr
-        )
+        int_comp = amp_codes[amp_i]
+        res = int_comp(inputs=inputs)
 
         if res.output is not None:
             value = res.output
 
         if res.opcode is not None:
-            amp_pointers[amp_i] = res.instruction_pointer + res.opcode.n_params + 1
+            int_comp.set_instruction_pointer(
+                res.instruction_pointer + res.opcode.n_params + 1
+            )
 
     while not halt:
         for amp_i in range(len(phase_sequence)):
             inputs = IntcodeInput([value])
-            ptr = amp_pointers.get(amp_i, 0)
-            res = run_intcode(
-                code=amp_codes[amp_i], inputs=inputs, verbose=False, start_pos=ptr
-            )
+            int_comp = amp_codes[amp_i]
+            res = int_comp(inputs=inputs)
 
             if res.output is not None:
                 value = res.output
 
             if res.opcode is not None:
-                amp_pointers[amp_i] = res.instruction_pointer + res.opcode.n_params + 1
+                int_comp.set_instruction_pointer(
+                    res.instruction_pointer + res.opcode.n_params + 1
+                )
 
             if res.instruction.opcode_value == 99:
                 halt = True
+
     return value
 
 
