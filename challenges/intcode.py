@@ -347,7 +347,7 @@ def make_opcode(
     op: int, params: list[int], code: Intcode, modes: ParameterModes, rel_base: int
 ) -> Opcode:
 
-    if op not in set(list(range(1, 9)) + [99]):
+    if op not in set(list(range(1, 10)) + [99]):
         raise UnknownOperationException(op)
 
     opcode_values: list[int] = []
@@ -398,7 +398,7 @@ class Instruction:
         self.opcode_value = int(self.instruction[-2:])
         _modes = [int(m) for m in self.instruction[:3]]
         assert len(_modes) == 3
-        assert all([m in {0, 1} for m in _modes])
+        assert all([m in {0, 1, 2} for m in _modes])
         self.modes = _modes[2], _modes[1], _modes[0]
         return None
 
@@ -412,6 +412,22 @@ class IntcodeResult:
     output: Optional[int]
     instruction: Instruction
     opcode: Optional[Opcode]
+
+    def __str__(self) -> str:
+        s = "Intruction Result:\n"
+        s += f" instruction pointer: {self.instruction_pointer}\n"
+        s += f" instruction: {self.instruction}\n"
+
+        if self.output is None:
+            s += " output: [None]\n"
+        else:
+            s += f" output: {self.output}\n"
+
+        if self.opcode is None:
+            s += " opcode: [None]\n"
+        else:
+            s += f" opcode: {self.opcode}\n"
+        return s
 
 
 class IntcodeComputer:
@@ -433,11 +449,15 @@ class IntcodeComputer:
         else:
             self._instr_ptr += op.n_params + 1
 
-    def __call__(self, inputs: IntcodeInput) -> IntcodeResult:
+    def __call__(self, inputs: Optional[IntcodeInput] = None) -> IntcodeResult:
+        if inputs is None:
+            inputs = IntcodeInput([])
         output: Optional[int] = None
         operation: Optional[Opcode] = None
         while True:
             instruction = Instruction(self.code[self._instr_ptr])
+            if self._verbose:
+                print(f"instruction: {instruction}")
 
             if instruction.opcode_value == 99:
                 if self._verbose:
